@@ -1,0 +1,415 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────
+
+enum EtapaCaso {
+  SRT
+  LITIGIOS_EXTRAJUDICIAL
+  NEGOCIACIONES
+  LITIGIOS_JUDICIAL
+  ACUERDO_CERRADO
+  SENTENCIADO
+  CONGELADO
+}
+
+enum TipoAtEp {
+  accidente_trabajo_accion_especial
+  accidente_in_itinere
+  enfermedad_profesional
+  enfermedad_no_listada
+}
+
+enum Jurisdiccion {
+  CABA
+  PROVINCIA_BA
+  NEUQUEN
+  RIO_NEGRO
+}
+
+enum OrigenCaptacion {
+  captadora
+  pauta_meta
+  referencia
+  otra
+}
+
+enum RolUsuario {
+  admin
+  abogado
+  captadora
+}
+
+enum SistemaExterno {
+  MEV
+  SRT
+  PJN_BA
+  PJN_NEUQUEN
+  PJN_RIO_NEGRO
+}
+
+enum EstadoConexion {
+  conectada
+  error
+  pendiente
+}
+
+enum TipoEvento {
+  homologacion
+  revision_medica
+  cumpleanos
+  reunion
+  entrevista
+  audiencia
+  sentencia
+  otra
+}
+
+enum TipoMovimiento {
+  resolucion
+  audiencia
+  escrito
+  notificacion
+  otra
+}
+
+enum CategoriaAdjunto {
+  srt
+  judicial
+  general
+}
+
+enum EstadoSync {
+  exito
+  error
+}
+
+enum ZonaAbogado {
+  zona_oeste
+  zona_norte
+  ambas
+}
+
+// ─── TABLAS MAESTRO ───────────────────────────────────────
+
+model Arte {
+  id              String   @id @default(uuid())
+  nombre          String
+  razonSocial     String   @map("razon_social")
+  cuit            String?  @unique
+  domicilio       String?
+  telefono        String?
+  email           String?
+  website         String?
+  contactoNombre  String?  @map("contacto_nombre")
+  contactoTelefono String? @map("contacto_telefono")
+  activa          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  casos Caso[]
+
+  @@map("arts")
+}
+
+model Abogado {
+  id                   String      @id @default(uuid())
+  nombre               String
+  zona                 ZonaAbogado @default(ambas)
+  jurisdicciones       String      @default("[]") // JSON array
+  matricula            String?     @unique
+  direccion            String?
+  domicilioElectronico String?     @map("domicilio_electronico")
+  telefono             String?
+  email                String?
+  activo               Boolean     @default(true)
+  createdAt            DateTime    @default(now()) @map("created_at")
+  updatedAt            DateTime    @updatedAt @map("updated_at")
+
+  casos Caso[]
+
+  @@map("abogados")
+}
+
+model Usuario {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  nombre       String
+  telefono     String?
+  rol          RolUsuario @default(abogado)
+  matricula    String?
+  activo       Boolean    @default(true)
+  ultimoLogin  DateTime?  @map("ultimo_login")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  notas       NotaUsuario[]
+  casosCaptados Caso[]      @relation("CaptadoraCaso")
+  comentarios Comentario[]
+  adjuntos    Adjunto[]
+  eventos     Evento[]
+  auditLogs   AuditLog[]
+
+  @@map("usuarios")
+}
+
+model NotaUsuario {
+  id         String   @id @default(uuid())
+  usuarioId  String   @map("usuario_id")
+  contenido  String
+  completada Boolean  @default(false)
+  orden      Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("notas_usuario")
+}
+
+model Cliente {
+  id             String   @id @default(uuid())
+  nombre         String
+  telefono       String?
+  email          String?
+  cuil           String?  @unique
+  fechaRegistro  DateTime @default(now()) @map("fecha_registro")
+  notas          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  casos Caso[]
+
+  @@map("clientes")
+}
+
+// ─── TABLA PRINCIPAL: CASOS ───────────────────────────────
+
+model Caso {
+  id          String  @id @default(uuid())
+  numeroCaso  String  @unique @map("numero_caso")
+  autos       String?
+
+  // Datos generales
+  clienteId         String?         @map("cliente_id")
+  cuil              String?
+  jurisdiccion      Jurisdiccion
+  tipoAtEp          TipoAtEp        @map("tipo_at_ep")
+  diagnostico       String?
+  relatoHechos      String?         @map("relato_hechos")
+  fechaSiniestro    DateTime?       @map("fecha_siniestro_pmi")
+  fechaAltaMedica   DateTime?       @map("fecha_alta_medica")
+  fechaCartaDocumento DateTime?     @map("fecha_carta_documento")
+  fechaTelegrama    DateTime?       @map("fecha_telegrama")
+  fechaNacimiento   DateTime?       @map("fecha_nacimiento")
+  edadPmi           Int?            @map("edad_pmi")
+  domicilioCliente  String?         @map("domicilio_cliente")
+  localidadCliente  String?         @map("localidad_cliente")
+  ibm               Decimal?        @db.Decimal(12, 2)
+  empleador         String?
+  cuitEmpleador     String?         @map("cuit_empleador")
+  artId             String?         @map("art_id")
+  testigo1          String?         @map("testigo_1")
+  testigo2          String?         @map("testigo_2")
+  captadoraId       String?         @map("captadora_id")
+  origenCaptacion   OrigenCaptacion @default(captadora) @map("origen_captacion")
+
+  // Estado
+  etapa          EtapaCaso @default(SRT)
+  estadoDetalle  String?   @map("estado_detalle")
+  abogadoId      String?   @map("abogado_id")
+  montoDemandado Decimal?  @db.Decimal(15, 2) @map("monto_demandado")
+
+  notasInternas String?  @map("notas_internas")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  cliente          Cliente?              @relation(fields: [clienteId], references: [id])
+  art              Arte?                 @relation(fields: [artId], references: [id])
+  captadora        Usuario?              @relation("CaptadoraCaso", fields: [captadoraId], references: [id])
+  abogado          Abogado?              @relation(fields: [abogadoId], references: [id])
+  datosSrt         DatosSrt?
+  datosJudiciales  DatosJudiciales?
+  conexiones       ConexionCaso[]
+  movimientos      MovimientoExpediente[]
+  comentarios      Comentario[]
+  adjuntos         Adjunto[]
+  eventos          Evento[]
+
+  @@map("casos")
+}
+
+// ─── TABLAS SRT Y JUDICIALES ──────────────────────────────
+
+model DatosSrt {
+  id                 String    @id @default(uuid())
+  casoId             String    @unique @map("caso_id")
+  fechaInicio        DateTime? @map("fecha_inicio")
+  nroExpediente      String?   @map("nro_expediente")
+  comisionMedica     String?   @map("comision_medica")
+  tipoTramite        String?   @map("tipo_tramite")
+  formularioInicioUrl String?  @map("formulario_inicio_url")
+  escritoInicioUrl   String?  @map("escrito_inicio_url")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  caso Caso @relation(fields: [casoId], references: [id], onDelete: Cascade)
+
+  @@map("datos_srt")
+}
+
+model DatosJudiciales {
+  id            String    @id @default(uuid())
+  casoId        String    @unique @map("caso_id")
+  fechaInicio   DateTime? @map("fecha_inicio")
+  nroExpediente String?   @map("nro_expediente")
+  juzgado       String?
+  pmoUrl        String?   @map("pmo_url")
+  demandaUrl    String?   @map("demanda_url")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  caso Caso @relation(fields: [casoId], references: [id], onDelete: Cascade)
+
+  @@map("datos_judiciales")
+}
+
+model ConexionCaso {
+  id                    String         @id @default(uuid())
+  casoId                String         @map("caso_id")
+  sistema               SistemaExterno
+  conectado             Boolean        @default(false)
+  nroExpediente         String?        @map("nro_expediente")
+  ultimaSincronizacion  DateTime?      @map("ultima_sincronizacion")
+  urlExpediente         String?        @map("url_expediente")
+  createdAt             DateTime       @default(now()) @map("created_at")
+
+  caso Caso @relation(fields: [casoId], references: [id], onDelete: Cascade)
+
+  @@unique([casoId, sistema])
+  @@map("conexiones_caso")
+}
+
+// ─── TABLAS DE CONTENIDO ──────────────────────────────────
+
+model MovimientoExpediente {
+  id              String         @id @default(uuid())
+  casoId          String         @map("caso_id")
+  sistema         SistemaExterno
+  tipo            TipoMovimiento
+  descripcion     String?
+  fechaMovimiento DateTime       @map("fecha_movimiento")
+  urlDocumento    String?        @map("url_documento")
+  notificado      Boolean        @default(false)
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  caso Caso @relation(fields: [casoId], references: [id], onDelete: Cascade)
+
+  @@map("movimientos_expediente")
+}
+
+model Comentario {
+  id         String   @id @default(uuid())
+  casoId     String   @map("caso_id")
+  usuarioId  String?  @map("usuario_id")
+  contenido  String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  caso    Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@map("comentarios")
+}
+
+model Adjunto {
+  id            String           @id @default(uuid())
+  casoId        String           @map("caso_id")
+  nombreArchivo String           @map("nombre_archivo")
+  urlArchivo    String           @map("url_archivo")
+  tipoArchivo   String?          @map("tipo_archivo")
+  tamanioBytes  Int?             @map("tamanio_bytes")
+  categoria     CategoriaAdjunto @default(general)
+  uploadedBy    String?          @map("uploaded_by")
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  caso    Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  usuario Usuario? @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
+
+  @@map("adjuntos")
+}
+
+model Evento {
+  id                   String     @id @default(uuid())
+  titulo               String
+  tipoEvento           TipoEvento @map("tipo_evento")
+  fechaEvento          DateTime   @map("fecha_evento")
+  casoId               String?    @map("caso_id")
+  usuarioResponsable   String?    @map("usuario_responsable")
+  descripcion          String?
+  lugar                String?
+  color                String?
+  participantes        String     @default("[]") // JSON array
+  recordatorioMinutos  Int        @default(60) @map("recordatorio_minutos")
+  notificado           Boolean    @default(false)
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
+
+  caso    Caso?    @relation(fields: [casoId], references: [id], onDelete: SetNull)
+  usuario Usuario? @relation(fields: [usuarioResponsable], references: [id], onDelete: SetNull)
+
+  @@map("eventos")
+}
+
+// ─── TABLAS DE SISTEMA ────────────────────────────────────
+
+model Credencial {
+  id                            String         @id @default(uuid())
+  sistema                       SistemaExterno @unique
+  usuarioEncrypted              String?        @map("usuario_encrypted")
+  passwordEncrypted             String?        @map("password_encrypted")
+  ultimaSincronizacion          DateTime?      @map("ultima_sincronizacion")
+  estadoConexion                EstadoConexion @default(pendiente) @map("estado_conexion")
+  ultimaPrueba                  DateTime?      @map("ultima_prueba")
+  intentosFallidos              Int            @default(0) @map("intentos_fallidos")
+  intervaloSincronizacionMinutos Int           @default(180) @map("intervalo_sincronizacion_minutos")
+  createdAt                     DateTime       @default(now()) @map("created_at")
+  updatedAt                     DateTime       @updatedAt @map("updated_at")
+
+  @@map("credenciales")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  usuarioId   String?  @map("usuario_id")
+  entidad     String
+  accion      String
+  idEntidad   String?  @map("id_entidad")
+  cambiosJson Json?    @map("cambios_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@map("audit_log")
+}
+
+model SyncLog {
+  id                    String     @id @default(uuid())
+  sistema               SistemaExterno
+  casosSincronizados    Int        @default(0) @map("casos_sincronizados")
+  movimientosDetectados Int        @default(0) @map("movimientos_detectados")
+  estado                EstadoSync
+  errorMensaje          String?    @map("error_mensaje")
+  duracionSegundos      Int?       @map("duracion_segundos")
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  @@map("sync_log")
+}

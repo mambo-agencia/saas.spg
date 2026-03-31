@@ -1,0 +1,167 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── BASE ──────────────────────────────────────────────── */
+
+@layer base {
+  :root {
+    --bg: #0c0c0c;
+    --bg-secondary: #1a1a1a;
+    --text: #f5f5f5;
+    --text-secondary: #a0a0a0;
+    --accent: #b4ff3c;
+    --border: #2a2a2a;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply bg-bg text-text;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-bg text-text min-h-screen;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #b4ff3c;
+  }
+}
+
+/* ─── COMPONENTS ────────────────────────────────────────── */
+
+@layer components {
+  .card {
+    @apply bg-bg-secondary border border-border rounded-lg p-4 shadow-card;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200 hover:border-border-hover hover:shadow-card-hover;
+  }
+
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded font-sans font-medium text-sm
+           transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-accent/40;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-bg-DEFAULT font-semibold hover:bg-accent-hover active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply btn bg-bg-secondary border border-border text-text hover:border-accent hover:text-accent active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply btn hover:bg-bg-hover text-text-secondary hover:text-text;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20;
+  }
+
+  .input {
+    @apply w-full bg-bg border border-border rounded px-3 py-2 text-sm text-text
+           placeholder:text-text-muted
+           focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30
+           transition-colors duration-150;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-text-secondary mb-1 uppercase tracking-wide;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+  }
+
+  /* Etapa badges */
+  .badge-srt { @apply badge bg-blue-500/15 text-blue-400 border border-blue-500/25; }
+  .badge-litigios-ext { @apply badge bg-violet-500/15 text-violet-400 border border-violet-500/25; }
+  .badge-negociaciones { @apply badge bg-amber-500/15 text-amber-400 border border-amber-500/25; }
+  .badge-litigios-jud { @apply badge bg-orange-500/15 text-orange-400 border border-orange-500/25; }
+  .badge-acuerdo { @apply badge bg-green-500/15 text-green-400 border border-green-500/25; }
+  .badge-sentenciado { @apply badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/25; }
+  .badge-congelado { @apply badge bg-zinc-500/15 text-zinc-400 border border-zinc-500/25; }
+
+  .page-title {
+    @apply font-display text-display-lg text-text uppercase tracking-widest;
+  }
+
+  .section-title {
+    @apply font-display text-display-sm text-text uppercase tracking-wider;
+  }
+
+  .stat-card {
+    @apply card flex flex-col gap-1;
+  }
+
+  .stat-number {
+    @apply font-display text-4xl text-accent;
+  }
+
+  .stat-label {
+    @apply text-xs text-text-secondary uppercase tracking-wider;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded text-text-secondary text-sm
+           hover:bg-bg-hover hover:text-text transition-colors duration-150;
+  }
+
+  .sidebar-link-active {
+    @apply sidebar-link bg-accent/10 text-accent border-l-2 border-accent;
+  }
+}
+
+/* ─── KANBAN ─────────────────────────────────────────────── */
+
+.kanban-column {
+  @apply flex flex-col gap-2 min-h-[200px] p-2 rounded-lg bg-bg-secondary/50;
+}
+
+.kanban-card {
+  @apply bg-bg-secondary border border-border rounded-lg p-3 cursor-pointer
+         hover:border-accent/40 transition-all duration-150 shadow-card;
+}
+
+.kanban-card:hover {
+  transform: translateY(-1px);
+  @apply shadow-card-hover;
+}
+
+/* ─── ANIMATIONS ─────────────────────────────────────────── */
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
