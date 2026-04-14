@@ -70,7 +70,7 @@
   }
 
   .btn-primary {
-    @apply btn bg-accent text-bg-DEFAULT font-semibold hover:bg-accent-hover active:scale-95;
+    @apply btn bg-accent text-bg font-semibold hover:bg-accent-hover active:scale-95;
   }
 
   .btn-secondary {
