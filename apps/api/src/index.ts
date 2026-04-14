@@ -3,7 +3,6 @@ import app from './app'
 import { logger } from './lib/logger'
 import { initQueues } from './jobs/queues'
 import { prisma } from './lib/prisma'
-import { redis } from './lib/redis'
 
 const PORT = process.env.PORT ?? 4000
 
@@ -12,13 +11,20 @@ async function main() {
   await prisma.$connect()
   logger.info('PostgreSQL connected')
 
-  // Test Redis
-  await redis.ping()
-  logger.info('Redis connected')
-
-  // Init Bull queues and workers
-  await initQueues()
-  logger.info('Job queues initialized')
+  // Redis + queues son opcionales (se omiten si REDIS_URL no está configurado)
+  if (process.env.REDIS_URL) {
+    try {
+      const { redis } = await import('./lib/redis')
+      await redis.ping()
+      logger.info('Redis connected')
+      await initQueues()
+      logger.info('Job queues initialized')
+    } catch (err) {
+      logger.warn('Redis no disponible — las colas de sincronización están deshabilitadas', err)
+    }
+  } else {
+    logger.warn('REDIS_URL no configurado — colas deshabilitadas')
+  }
 
   app.listen(PORT, () => {
     logger.info(`API running on http://localhost:${PORT}`)
@@ -31,10 +37,8 @@ main().catch((err) => {
   process.exit(1)
 })
 
-// Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down...')
   await prisma.$disconnect()
-  redis.disconnect()
   process.exit(0)
 })
