@@ -15,9 +15,49 @@ export interface Arte {
   razonSocial: string
   cuit?: string
   domicilio?: string
+  domicilioProvincia?: string
+  domicilioNqn?: string
   telefono?: string
   email?: string
   activa: boolean
+}
+
+export interface Abogado {
+  id: string
+  nombre: string
+  zona: string
+  jurisdicciones: string
+  cuit?: string
+  matricula?: string
+  direccion?: string
+  domicilioElectronico?: string
+  telefono?: string
+  email?: string
+  activo: boolean
+}
+
+export interface Empleador {
+  id: string
+  nombre: string
+  cuit?: string
+  domicilio?: string
+  localidad?: string
+  provincia?: string
+}
+
+export type EstadoFormulario = 'PENDIENTE' | 'GENERADO' | 'DESCARGADO'
+
+export interface FormularioInicio {
+  id: string
+  casoId: string
+  estado: EstadoFormulario
+  linkGoogleDocs?: string
+  linkPdf?: string
+  idAutocrat?: string
+  fechaGeneracion?: string
+  createdAt: string
+  updatedAt: string
+  caso?: Caso
 }
 
 export interface Cliente {
@@ -142,6 +182,24 @@ export interface Caso {
   captadoraNombre?: string
   origenCaptacion?: OrigenCaptacion
 
+  // --- Datos empleador extendidos ---
+  domicilioEmpleador?: string
+  localidadEmpleador?: string
+  provinciaEmpleador?: string
+
+  // --- Datos formulario de inicio ---
+  lesion?: string
+  afeccionesDerivadas?: string
+  porcentajeIncapacidad?: number
+  regionAfectada?: string
+  requiereEstudiosMedicos?: boolean
+  observacionesMedicas?: string
+  domicilioNotificacion?: string
+  domicilioServicios?: string
+  domicilioReporte?: string
+  fechaBajaLaboral?: string
+  fechaDenuncia?: string
+
   // Estado
   etapa: EtapaCaso
   estadoDetalle?: string
@@ -152,6 +210,7 @@ export interface Caso {
   // Relacionados (cargados bajo demanda)
   datosSrt?: DatosSrt
   datosJudiciales?: DatosJudiciales
+  formularioInicio?: FormularioInicio
   conexiones?: ConexionCaso[]
   movimientos?: MovimientoExpediente[]
   comentarios?: Comentario[]

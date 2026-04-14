@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth'
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: '⬜' },
   { href: '/casos', label: 'Casos', icon: '📁' },
+  { href: '/formularios', label: 'Formularios', icon: '📄' },
   { href: '/agenda', label: 'Agenda', icon: '📅' },
   { href: '/analisis', label: 'Análisis', icon: '📊' },
   { href: '/conexiones', label: 'Conexiones', icon: '🔗' },

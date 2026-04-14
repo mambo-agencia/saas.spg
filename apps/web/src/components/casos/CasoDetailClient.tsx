@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { ETAPA_LABELS, ETAPA_BADGE_CLASS, formatDate, formatCurrency, TIPO_AT_EP_LABELS, JURISDICCION_LABELS } from '@/lib/utils'
+import { FormularioInicioTab } from '@/components/formularios/FormularioInicioTab'
 import type { Caso } from '@spg/shared'
 
-type Tab = 'generales' | 'conexiones' | 'abogado' | 'srt' | 'judicial' | 'movimientos' | 'comentarios' | 'adjuntos'
+type Tab = 'generales' | 'conexiones' | 'abogado' | 'srt' | 'formulario' | 'judicial' | 'movimientos' | 'comentarios' | 'adjuntos'
 
 export function CasoDetailClient({ id }: { id: string }) {
   const [activeTab, setActiveTab] = useState<Tab>('generales')
@@ -33,10 +34,11 @@ export function CasoDetailClient({ id }: { id: string }) {
 
   const TABS: { key: Tab; label: string }[] = [
     { key: 'generales', label: 'Datos Generales' },
-    { key: 'conexiones', label: 'Conexiones' },
-    { key: 'abogado', label: 'Abogado' },
     { key: 'srt', label: 'SRT' },
+    { key: 'formulario', label: 'Formulario Inicio' },
+    { key: 'abogado', label: 'Abogado' },
     { key: 'judicial', label: 'Judicial' },
+    { key: 'conexiones', label: 'Conexiones' },
     { key: 'movimientos', label: 'Movimientos' },
     { key: 'comentarios', label: 'Comentarios' },
     { key: 'adjuntos', label: 'Adjuntos' },
@@ -85,27 +87,67 @@ export function CasoDetailClient({ id }: { id: string }) {
       {/* Tab content */}
       <div className="animate-fade-in">
         {activeTab === 'generales' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Cliente" value={caso.cliente?.nombre} />
-            <Field label="CUIL" value={caso.cuil} />
-            <Field label="Jurisdicción" value={JURISDICCION_LABELS[caso.jurisdiccion]} />
-            <Field label="Tipo AT/EP" value={TIPO_AT_EP_LABELS[caso.tipoAtEp]} />
-            <Field label="ART" value={caso.art?.nombre} />
-            <Field label="Empleador" value={caso.empleador} />
-            <Field label="CUIT Empleador" value={caso.cuitEmpleador} />
-            <Field label="IBM (Sueldo)" value={formatCurrency(caso.ibm)} />
-            <Field label="Fecha Siniestro" value={formatDate(caso.fechaSiniestro)} />
-            <Field label="Fecha Alta Médica" value={formatDate(caso.fechaAltaMedica)} />
-            <Field label="Fecha Nacimiento" value={formatDate(caso.fechaNacimiento)} />
-            <Field label="Domicilio" value={caso.domicilioCliente} />
-            <Field label="Localidad" value={caso.localidadCliente} />
-            <Field label="Captadora" value={caso.captadoraNombre} />
-            <div className="md:col-span-2">
-              <Field label="Diagnóstico" value={caso.diagnostico} multiline />
-            </div>
-            <div className="md:col-span-2">
-              <Field label="Relato de Hechos" value={caso.relatoHechos} multiline />
-            </div>
+          <div className="space-y-4">
+            {/* Trabajador */}
+            <SubSection title="Trabajador / Damnificado">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Nombre" value={caso.cliente?.nombre} />
+                <Field label="CUIL" value={caso.cuil} />
+                <Field label="Fecha Nacimiento" value={formatDate(caso.fechaNacimiento)} />
+                <Field label="Domicilio" value={caso.domicilioCliente} />
+                <Field label="Localidad" value={caso.localidadCliente} />
+              </div>
+            </SubSection>
+            {/* Caso */}
+            <SubSection title="Datos del Caso">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Jurisdicción" value={JURISDICCION_LABELS[caso.jurisdiccion]} />
+                <Field label="Tipo AT/EP" value={TIPO_AT_EP_LABELS[caso.tipoAtEp]} />
+                <Field label="ART" value={caso.art?.nombre} />
+                <Field label="IBM (Sueldo)" value={formatCurrency(caso.ibm)} />
+                <Field label="Fecha Siniestro" value={formatDate(caso.fechaSiniestro)} />
+                <Field label="Fecha Denuncia (SRT)" value={formatDate(caso.fechaDenuncia)} />
+                <Field label="Fecha Baja Laboral" value={formatDate(caso.fechaBajaLaboral)} />
+                <Field label="Captadora" value={caso.captadoraNombre} />
+              </div>
+            </SubSection>
+            {/* Empleador */}
+            <SubSection title="Empleador">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Razón Social" value={caso.empleador} />
+                <Field label="CUIT" value={caso.cuitEmpleador} />
+                <Field label="Domicilio" value={(caso as { domicilioEmpleador?: string }).domicilioEmpleador} />
+                <Field label="Localidad" value={(caso as { localidadEmpleador?: string }).localidadEmpleador} />
+                <Field label="Provincia" value={(caso as { provinciaEmpleador?: string }).provinciaEmpleador} />
+              </div>
+            </SubSection>
+            {/* Médico */}
+            <SubSection title="Datos Médicos">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Lesión / Diagnóstico" value={(caso as { lesion?: string }).lesion} />
+                <Field label="Región Afectada" value={(caso as { regionAfectada?: string }).regionAfectada} />
+                <Field label="% Incapacidad" value={(caso as { porcentajeIncapacidad?: number }).porcentajeIncapacidad != null ? `${(caso as { porcentajeIncapacidad?: number }).porcentajeIncapacidad}%` : undefined} />
+                <Field label="Requiere Estudios" value={(caso as { requiereEstudiosMedicos?: boolean }).requiereEstudiosMedicos ? 'Sí' : 'No'} />
+                <div className="md:col-span-2">
+                  <Field label="Afecciones Derivadas" value={(caso as { afeccionesDerivadas?: string }).afeccionesDerivadas} />
+                </div>
+                <div className="md:col-span-2">
+                  <Field label="Obs. Médicas" value={(caso as { observacionesMedicas?: string }).observacionesMedicas} multiline />
+                </div>
+              </div>
+            </SubSection>
+            {/* Relato */}
+            <SubSection title="Relato de los Hechos">
+              <Field label="" value={caso.relatoHechos} multiline />
+            </SubSection>
+            {/* Domicilios */}
+            <SubSection title="Domicilios para Notificación">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Domicilio Notificación" value={(caso as { domicilioNotificacion?: string }).domicilioNotificacion} />
+                <Field label="Domicilio Servicios Médicos" value={(caso as { domicilioServicios?: string }).domicilioServicios} />
+                <Field label="Domicilio Reporte" value={(caso as { domicilioReporte?: string }).domicilioReporte} />
+              </div>
+            </SubSection>
           </div>
         )}
 
@@ -141,15 +183,23 @@ export function CasoDetailClient({ id }: { id: string }) {
           </div>
         )}
 
-        {activeTab === 'srt' && caso.datosSrt && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Fecha de Inicio" value={formatDate(caso.datosSrt.fechaInicio)} />
-            <Field label="Nro. Expediente" value={caso.datosSrt.nroExpediente} />
-            <Field label="Comisión Médica" value={caso.datosSrt.comisionMedica} />
-            <Field label="Tipo de Trámite" value={caso.datosSrt.tipoTramite} />
-            <FileField label="Formulario de Inicio" url={caso.datosSrt.formularioInicioUrl} />
-            <FileField label="Escrito de Inicio" url={caso.datosSrt.escritoInicioUrl} />
-          </div>
+        {activeTab === 'formulario' && (
+          <FormularioInicioTab casoId={caso.id} />
+        )}
+
+        {activeTab === 'srt' && (
+          caso.datosSrt ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Fecha de Inicio" value={formatDate(caso.datosSrt.fechaInicio)} />
+              <Field label="Nro. Expediente" value={caso.datosSrt.nroExpediente} />
+              <Field label="Comisión Médica" value={caso.datosSrt.comisionMedica} />
+              <Field label="Tipo de Trámite" value={caso.datosSrt.tipoTramite} />
+              <FileField label="Formulario de Inicio" url={caso.datosSrt.formularioInicioUrl} />
+              <FileField label="Escrito de Inicio" url={caso.datosSrt.escritoInicioUrl} />
+            </div>
+          ) : (
+            <p className="text-text-secondary text-sm">Sin datos SRT registrados.</p>
+          )
         )}
 
         {activeTab === 'judicial' && caso.datosJudiciales && (
@@ -231,6 +281,15 @@ export function CasoDetailClient({ id }: { id: string }) {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function SubSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="card">
+      {title && <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3 border-b border-border/50 pb-2">{title}</p>}
+      {children}
     </div>
   )
 }

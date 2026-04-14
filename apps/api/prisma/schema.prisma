@@ -96,22 +96,30 @@ enum ZonaAbogado {
   ambas
 }
 
+enum EstadoFormulario {
+  PENDIENTE
+  GENERADO
+  DESCARGADO
+}
+
 // ─── TABLAS MAESTRO ───────────────────────────────────────
 
 model Arte {
-  id              String   @id @default(uuid())
-  nombre          String
-  razonSocial     String   @map("razon_social")
-  cuit            String?  @unique
-  domicilio       String?
-  telefono        String?
-  email           String?
-  website         String?
-  contactoNombre  String?  @map("contacto_nombre")
-  contactoTelefono String? @map("contacto_telefono")
-  activa          Boolean  @default(true)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id               String   @id @default(uuid())
+  nombre           String
+  razonSocial      String   @map("razon_social")
+  cuit             String?  @unique
+  domicilio        String?
+  domicilioProvincia String? @map("domicilio_provincia")
+  domicilioNqn     String?  @map("domicilio_nqn")
+  telefono         String?
+  email            String?
+  website          String?
+  contactoNombre   String?  @map("contacto_nombre")
+  contactoTelefono String?  @map("contacto_telefono")
+  activa           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   casos Caso[]
 
@@ -123,6 +131,7 @@ model Abogado {
   nombre               String
   zona                 ZonaAbogado @default(ambas)
   jurisdicciones       String      @default("[]") // JSON array
+  cuit                 String?
   matricula            String?     @unique
   direccion            String?
   domicilioElectronico String?     @map("domicilio_electronico")
@@ -227,6 +236,22 @@ model Caso {
   abogadoId      String?   @map("abogado_id")
   montoDemandado Decimal?  @db.Decimal(15, 2) @map("monto_demandado")
 
+  // --- DATOS FORMULARIO DE INICIO (SRT) ---
+  lesion                  String?
+  afeccionesDerivadas     String?   @map("afecciones_derivadas") // JSON array
+  porcentajeIncapacidad   Decimal?  @map("porcentaje_incapacidad") @db.Decimal(5, 2)
+  regionAfectada          String?   @map("region_afectada")
+  requiereEstudiosMedicos Boolean   @default(false) @map("requiere_estudios_medicos")
+  observacionesMedicas    String?   @map("observaciones_medicas")
+  domicilioNotificacion   String?   @map("domicilio_notificacion")
+  domicilioServicios      String?   @map("domicilio_servicios")
+  domicilioReporte        String?   @map("domicilio_reporte")
+  fechaBajaLaboral        DateTime? @map("fecha_baja_laboral")
+  fechaDenuncia           DateTime? @map("fecha_denuncia")
+  domicilioEmpleador      String?   @map("domicilio_empleador")
+  localidadEmpleador      String?   @map("localidad_empleador")
+  provinciaEmpleador      String?   @map("provincia_empleador")
+
   notasInternas String?  @map("notas_internas")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -238,6 +263,7 @@ model Caso {
   abogado          Abogado?              @relation(fields: [abogadoId], references: [id])
   datosSrt         DatosSrt?
   datosJudiciales  DatosJudiciales?
+  formularioInicio FormularioInicio?
   conexiones       ConexionCaso[]
   movimientos      MovimientoExpediente[]
   comentarios      Comentario[]
@@ -280,6 +306,22 @@ model DatosJudiciales {
   caso Caso @relation(fields: [casoId], references: [id], onDelete: Cascade)
 
   @@map("datos_judiciales")
+}
+
+model FormularioInicio {
+  id              String           @id @default(uuid())
+  casoId          String           @unique @map("caso_id")
+  estado          EstadoFormulario @default(PENDIENTE)
+  linkGoogleDocs  String?          @map("link_google_docs")
+  linkPdf         String?          @map("link_pdf")
+  idAutocrat      String?          @map("id_autocrat")
+  fechaGeneracion DateTime?        @map("fecha_generacion")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  caso Caso @relation(fields: [casoId], references: [id], onDelete: Cascade)
+
+  @@map("formularios_inicio")
 }
 
 model ConexionCaso {
@@ -367,6 +409,21 @@ model Evento {
   usuario Usuario? @relation(fields: [usuarioResponsable], references: [id], onDelete: SetNull)
 
   @@map("eventos")
+}
+
+// ─── TABLA EMPLEADORES (AUTOCOMPLETE) ────────────────────
+
+model Empleador {
+  id         String   @id @default(uuid())
+  nombre     String   @unique
+  cuit       String?
+  domicilio  String?
+  localidad  String?
+  provincia  String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("empleadores")
 }
 
 // ─── TABLAS DE SISTEMA ────────────────────────────────────

@@ -120,6 +120,7 @@ casosRouter.get('/:id', async (req: AuthRequest, res: Response): Promise<void> =
       abogado: true,
       datosSrt: true,
       datosJudiciales: true,
+      formularioInicio: true,
       conexiones: true,
       movimientos: { orderBy: { fechaMovimiento: 'desc' }, take: 50 },
       comentarios: {

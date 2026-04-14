@@ -16,6 +16,8 @@ import { conexionesRouter } from './routes/conexiones'
 import { notasRouter } from './routes/notas'
 import { artsRouter } from './routes/arts'
 import { abogadosRouter } from './routes/abogados'
+import { formulariosRouter } from './routes/formularios'
+import { autocompleteRouter } from './routes/autocomplete'
 import { errorHandler } from './middleware/errorHandler'
 import { notFound } from './middleware/notFound'
 import { logger } from './lib/logger'
@@ -75,6 +77,8 @@ app.use('/api/conexiones', conexionesRouter)
 app.use('/api/notas-usuario', notasRouter)
 app.use('/api/arts', artsRouter)
 app.use('/api/abogados', abogadosRouter)
+app.use('/api/formularios', formulariosRouter)
+app.use('/api/autocomplete', autocompleteRouter)
 
 // ─── ERROR HANDLERS ───────────────────────────────────────
 
